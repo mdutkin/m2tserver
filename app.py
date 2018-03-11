@@ -32,11 +32,10 @@ class CustomBaseHandler(AuthorizationMixin, BaseHandler):
 
     def say(self, *args, **kwargs):
         self.go = True
-        print('here we go', args, kwargs)
+        print('let\' say: ', args, kwargs)
 
     def after_response(self):
         signals.unsubscribe(self.say)
-        print('after response - unsibscribe')
 
     def initialize(self):
         # here subscribe
@@ -55,12 +54,10 @@ class CustomBaseHandler(AuthorizationMixin, BaseHandler):
         return auth
 
     def get(self):
-        # time.sleep(1)
         CustomBaseHandler.counter += 1
         print(CustomBaseHandler.counter)
         while not self.go:
             time.sleep(0.01)
-        print('go ahead')
         self.send_response(200)
         self.end_headers()
         message = threading.currentThread().getName()
@@ -74,13 +71,6 @@ class CustomBaseHandler(AuthorizationMixin, BaseHandler):
 
 if __name__ == '__main__':
     server = ThreadedHTTPServer(('0.0.0.0', 8080), CustomBaseHandler)
-    # def fire():
-    #     print('fire!')
-    #
-    # for i in range(10):
-    #     t = threading.Thread(target=fire, name='thread %s' % i)
-    #     t.run()
-    #
     print('Starting server, use <Ctrl-C> to stop')
     try:
         server.serve_forever()
