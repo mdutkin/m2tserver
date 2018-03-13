@@ -1,6 +1,5 @@
-from threading_srv import ThreadedHTTPServer
-from threading_srv import BaseHandler
-from threading_srv.middleware import AuthorizationMixin
+from threading_srv import BaseRequestHandler
+from threading_srv import Core
 import threading
 import redis
 from threading_srv.utils import EventDispatcher
@@ -26,7 +25,7 @@ r.set('auth', 'Hello, World!')
 signals = EventDispatcher()
 
 
-class CustomBaseHandler(AuthorizationMixin, BaseHandler):
+class CustomBaseHandler(BaseRequestHandler):
 
     counter = 0
 
@@ -53,26 +52,35 @@ class CustomBaseHandler(AuthorizationMixin, BaseHandler):
         }
         return auth
 
-    def get(self):
+    def gett(self):
         CustomBaseHandler.counter += 1
         print(CustomBaseHandler.counter)
         while not self.go:
             time.sleep(0.01)
-        self.send_response(200)
-        self.end_headers()
+        # self.send_response(200)
+        # self.end_headers()
         message = threading.currentThread().getName()
-        self.wfile.write(('token for %s is `%s`\n' % (message, self.user['some_token'])).encode('utf-8'))
+        self.write('token for %s is `%s`\n' % (message, self.user['some_token']))
+
+    def get(self):
+        # self.send_response(200)
+        # self.end_headers()
+        message = threading.currentThread().getName()
+        self.write('token for %s is `%s`\n' % (message, self.user['some_token']))
 
     def head(self):
         signals.publish('my msg', 'general')
-        self.send_response(200)
-        self.end_headers()
+        # self.send_response(200)
+        # self.end_headers()
 
 
 if __name__ == '__main__':
-    server = ThreadedHTTPServer(('0.0.0.0', 8080), CustomBaseHandler)
-    print('Starting server, use <Ctrl-C> to stop')
+    app = Core({
+        r'/sub': CustomBaseHandler,
+        r'/pub': CustomBaseHandler
+    })
     try:
-        server.serve_forever()
+        print('Starting server, use <Ctrl-C> to stop')
+        app.run('0.0.0.0', 8080)
     except KeyboardInterrupt:
         pass
